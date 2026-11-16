@@ -4,6 +4,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
     case caPlayground
     case nugget
     case apple
+    case wallive
 
     var id: Self { self }
 
@@ -12,6 +13,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
         case .caPlayground: "CAP"
         case .nugget: "Nugget"
         case .apple: "Apple"
+        case .wallive: "Wallive"
         }
     }
 }
@@ -19,11 +21,13 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
 enum WallpaperSource: String, Codable, Sendable {
     case nugget
     case caPlayground
+    case wallive
 
     nonisolated var assetBaseURL: URL {
         switch self {
         case .nugget: WallpaperCatalog.nuggetAssetBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundAssetBaseURL
+        case .wallive: WalliveAPI.baseURL
         }
     }
 
@@ -31,6 +35,7 @@ enum WallpaperSource: String, Codable, Sendable {
         switch self {
         case .nugget: WallpaperCatalog.nuggetPackageBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundPackageBaseURL
+        case .wallive: WalliveAPI.baseURL
         }
     }
 
@@ -38,6 +43,7 @@ enum WallpaperSource: String, Codable, Sendable {
         switch self {
         case .nugget: URL(string: "https://raw.githubusercontent.com/SerStars/nugget-wallpapers/main/")!
         case .caPlayground: URL(string: "https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
+        case .wallive: WalliveAPI.baseURL
         }
     }
 }
@@ -86,11 +92,21 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
     let source: WallpaperSource
 
     var id: String { "\(source.rawValue):\(url)" }
-    nonisolated var downloadURL: URL { source.packageBaseURL.appending(path: url) }
-    nonisolated var downloadCandidates: [URL] {
-        [downloadURL, source.directPackageBaseURL.appending(path: url)]
+    /// Wallive items keep their direct media link (absolute) in `url`,
+    /// unlike the catalog sources, whose `url` is a package path relative
+    /// to the source's base URL.
+    nonisolated var downloadURL: URL {
+        if source == .wallive { return WalliveAPI.resolve(url) }
+        return source.packageBaseURL.appending(path: url)
     }
-    nonisolated var previewURL: URL { source.assetBaseURL.appending(path: preview) }
+    nonisolated var downloadCandidates: [URL] {
+        if source == .wallive { return [downloadURL] }
+        return [downloadURL, source.directPackageBaseURL.appending(path: url)]
+    }
+    nonisolated var previewURL: URL {
+        if source == .wallive { return WalliveAPI.resolve(preview) }
+        return source.assetBaseURL.appending(path: preview)
+    }
 
     enum CodingKeys: String, CodingKey {
         case remoteID = "id"
@@ -184,6 +200,8 @@ struct WallpaperCatalog: Sendable {
             return response.wallpapers
                 .sorted { $0.date < $1.date }
                 .map(\.wallpaper)
+        case .wallive:
+            return try await WalliveCatalog.fetchAll(refresh: refresh)
         }
     }
 

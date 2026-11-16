@@ -25,6 +25,7 @@ enum WallpaperLocationNotice {
 final class InstallCoordinator {
     private(set) var state: InstallState = .idle
     private let installer = WallpaperInstaller()
+    private let videoInstaller = VideoWallpaperInstaller()
     private var task: Task<Void, Never>?
 
     func install(_ wallpaper: Wallpaper) {
@@ -35,6 +36,54 @@ final class InstallCoordinator {
             do {
                 try await installer.install(wallpaper) { [weak self] phase in
                     self?.state = phase
+                }
+                finishInstallation()
+            } catch is CancellationError {
+                state = .idle
+            } catch {
+                reportInstallFailure(error)
+                state = .failure(error.localizedDescription)
+            }
+        }
+    }
+
+    /// Installs a Wallive wallpaper. Its media is a raw mp4 / image, not
+    /// a `.tendies` package, so it is first turned into a local video
+    /// (downloaded, trimmed to the 12-second cap, or rendered from the
+    /// still) and then installed through the same video-wallpaper
+    /// pipeline as the Create tab.
+    func installWallive(_ wallpaper: Wallpaper) {
+        guard !state.isWorking else { return }
+        task?.cancel()
+        state = .downloading(0)
+        task = Task { [self] in
+            do {
+                let workspace = FileManager.default.temporaryDirectory
+                    .appending(path: "Placard-Wallive-\(UUID().uuidString)", directoryHint: .isDirectory)
+                try FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true)
+                defer { try? FileManager.default.removeItem(at: workspace) }
+
+                let localVideo = try await WalliveVideoPrep.localVideo(for: wallpaper, in: workspace) { [weak self] fraction in
+                    Task { @MainActor in
+                        self?.state = .downloading(fraction)
+                    }
+                }
+                try Task.checkCancellation()
+
+                state = .importing
+                try await videoInstaller.install(
+                    sourceURL: localVideo,
+                    name: wallpaper.name,
+                    autoReverses: false,
+                    frameRate: .efficient
+                ) { [weak self] phase in
+                    switch phase {
+                    case .inspecting: self?.state = .importing
+                    case .generating: self?.state = .unpacking
+                    case .locatingPosterBoard: self?.state = .locatingPosterBoard
+                    case .writing: self?.state = .writing
+                    case .idle, .installed, .preparingRespring, .respringing, .failure: break
+                    }
                 }
                 finishInstallation()
             } catch is CancellationError {

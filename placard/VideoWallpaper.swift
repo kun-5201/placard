@@ -138,7 +138,10 @@ enum VideoInstallState: Equatable, Sendable {
     }
 }
 
-private actor VideoWallpaperInstaller {
+/// Builds a PosterBoard descriptor from a video file and installs it.
+/// Internal so `InstallCoordinator` can reuse it for Wallive wallpapers,
+/// whose media arrives as a raw mp4 rather than a `.tendies` package.
+actor VideoWallpaperInstaller {
     private let fileManager = FileManager.default
     private let maximumDuration = 12.0
     private let maximumOutputLongEdge: CGFloat = 1920
