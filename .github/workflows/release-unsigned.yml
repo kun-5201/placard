@@ -18,7 +18,10 @@ concurrency:
 jobs:
   release:
     if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')
-    runs-on: macos-26
+    # Intel pool: arm64 macos-26 runners have been capacity-starved
+    # (5 queued-then-cancelled runs, 2026-11-17); the Intel image runs
+    # the same Xcode and cross-compiles the arm64 iOS archive.
+    runs-on: macos-26-intel
     timeout-minutes: 30
 
     steps:
