@@ -15,11 +15,13 @@ import UIKit
 /// (relative paths are rooted at the API host).
 ///
 /// Wallive serves raw media (mp4 / images), not `.tendies` packages, so
-/// installing one goes through Placard's own video-wallpaper pipeline
-/// (`VideoWallpaperInstaller`): the mp4 is downloaded, trimmed to the
-/// 12-second cap when needed, and its frames become a PosterBoard
+/// installing one builds a `.tendies` package on device first
+/// (`WalliveTendiesBuilder`, a port of wallive-unlock's
+/// `make_tendies_offline.py`): the mp4 is downloaded, trimmed to the
+/// 12-second cap when needed, and its frames become a `LayeredAnimation`
 /// descriptor. Still images are rendered into a short looping clip first,
-/// so every Wallive item is installable the same way.
+/// so every Wallive item is installable the same way, and every install
+/// produces a genuine `.tendies` wallpaper.
 enum WalliveAPI {
     // Full catalog lives on wall-api.18ir.cn (extracted from the Wallive
     // 1.2 / build 472 app, bundle com.mutually.wallpaper.direct). The old

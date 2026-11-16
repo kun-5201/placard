@@ -25,7 +25,6 @@ enum WallpaperLocationNotice {
 final class InstallCoordinator {
     private(set) var state: InstallState = .idle
     private let installer = WallpaperInstaller()
-    private let videoInstaller = VideoWallpaperInstaller()
     private var task: Task<Void, Never>?
 
     func install(_ wallpaper: Wallpaper) {
@@ -48,10 +47,13 @@ final class InstallCoordinator {
     }
 
     /// Installs a Wallive wallpaper. Its media is a raw mp4 / image, not
-    /// a `.tendies` package, so it is first turned into a local video
-    /// (downloaded, trimmed to the 12-second cap, or rendered from the
-    /// still) and then installed through the same video-wallpaper
-    /// pipeline as the Create tab.
+    /// a `.tendies` package, so the media is first turned into a local
+    /// video (downloaded, trimmed to the 12-second cap, or rendered from
+    /// the still) and then built into a genuine `.tendies` package on
+    /// device — an 8 fps JPEG frame sequence in a `LayeredAnimation`
+    /// descriptor, the same layout wallive-unlock's
+    /// `make_tendies_offline.py` builds — which installs through the
+    /// same `.tendies` installer as a downloaded package.
     func installWallive(_ wallpaper: Wallpaper) {
         guard !state.isWorking else { return }
         task?.cancel()
@@ -71,19 +73,16 @@ final class InstallCoordinator {
                 try Task.checkCancellation()
 
                 state = .importing
-                try await videoInstaller.install(
-                    sourceURL: localVideo,
+                let packageURL = try await WalliveTendiesBuilder.build(
+                    from: localVideo,
+                    wallpaperID: wallpaper.remoteID ?? Int.random(in: 10_000...99_999),
                     name: wallpaper.name,
-                    autoReverses: false,
-                    frameRate: .efficient
-                ) { [weak self] phase in
-                    switch phase {
-                    case .inspecting: self?.state = .importing
-                    case .generating: self?.state = .unpacking
-                    case .locatingPosterBoard: self?.state = .locatingPosterBoard
-                    case .writing: self?.state = .writing
-                    case .idle, .installed, .preparingRespring, .respringing, .failure: break
-                    }
+                    in: workspace
+                )
+                try Task.checkCancellation()
+
+                try await installer.install(packageAt: packageURL) { [weak self] phase in
+                    self?.state = phase
                 }
                 finishInstallation()
             } catch is CancellationError {

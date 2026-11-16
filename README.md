@@ -20,9 +20,11 @@ older `walllive.18ir.cn` host, which now serves only a single
 announcement card; the full catalog — 427 items — lives on `wall-api`,
 as used by the Wallive 1.2 app). Wallive serves raw media
 (mp4 / images) rather than `.tendies` packages, so installing one
-downloads the media on-device, trims clips longer than 12 seconds, and
-renders still images into a short looping clip, then installs it through
-the same video-wallpaper pipeline as the Create tab. The API mapping
+builds a `.tendies` package on-device first — the mp4's frames become
+a `LayeredAnimation` descriptor, the same layout wallive-unlock's
+`make_tendies_offline.py` builds — then installs it through Placard's
+`.tendies` installer. Clips longer than 12 seconds are trimmed, and
+still images are rendered into a short looping clip first. The API mapping
 follows [lty5201/wallive-unlock](https://github.com/lty5201/wallive-unlock),
 which resolves the same endpoint to direct media links and builds
 `.tendies` packages from them.
