@@ -3,7 +3,7 @@ import CoreImage
 import Foundation
 import UIKit
 
-/// Wallive (walllive.18ir.cn) as a wallpaper source for Placard.
+/// Wallive (wall-api.18ir.cn) as a wallpaper source for Placard.
 ///
 /// The list API and media mapping come from lty5201/wallive-unlock
 /// (`Tweak.xm`: `WUFetchPage` / `WUAbsorbPage`), which reads the same
@@ -21,7 +21,11 @@ import UIKit
 /// descriptor. Still images are rendered into a short looping clip first,
 /// so every Wallive item is installable the same way.
 enum WalliveAPI {
-    nonisolated static let baseURL = URL(string: "https://walllive.18ir.cn")!
+    // Full catalog lives on wall-api.18ir.cn (extracted from the Wallive
+    // 1.2 / build 472 app, bundle com.mutually.wallpaper.direct). The old
+    // walllive.18ir.cn host now returns only a single announcement card
+    // (total=1), while wall-api serves the same list shape with total=427.
+    nonisolated static let baseURL = URL(string: "https://wall-api.18ir.cn")!
 
     nonisolated static func listURL(page: Int) -> URL {
         baseURL.appending(path: "api/get_wallpaper.php")

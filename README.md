@@ -15,7 +15,10 @@ Browse, create, install, and manage PosterBoard wallpapers on iOS.
 ## Wallive
 
 The Browse tab has a Wallive collection backed by the public list API
-at `walllive.18ir.cn/api/get_wallpaper.php`. Wallive serves raw media
+at `wall-api.18ir.cn/api/get_wallpaper.php` (same list shape as the
+older `walllive.18ir.cn` host, which now serves only a single
+announcement card; the full catalog — 427 items — lives on `wall-api`,
+as used by the Wallive 1.2 app). Wallive serves raw media
 (mp4 / images) rather than `.tendies` packages, so installing one
 downloads the media on-device, trims clips longer than 12 seconds, and
 renders still images into a short looping clip, then installs it through
