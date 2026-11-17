@@ -5,6 +5,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
     case nugget
     case apple
     case wallive
+    case oneNineOne
 
     var id: Self { self }
 
@@ -14,6 +15,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
         case .nugget: "Nugget"
         case .apple: "Apple"
         case .wallive: "Wallive"
+        case .oneNineOne: "191壁纸"
         }
     }
 }
@@ -22,12 +24,14 @@ enum WallpaperSource: String, Codable, Sendable {
     case nugget
     case caPlayground
     case wallive
+    case oneNineOne
 
     nonisolated var assetBaseURL: URL {
         switch self {
         case .nugget: WallpaperCatalog.nuggetAssetBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundAssetBaseURL
         case .wallive: WalliveAPI.baseURL
+        case .oneNineOne: OneNineOneAPI.baseURL
         }
     }
 
@@ -36,6 +40,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .nugget: WallpaperCatalog.nuggetPackageBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundPackageBaseURL
         case .wallive: WalliveAPI.baseURL
+        case .oneNineOne: OneNineOneAPI.baseURL
         }
     }
 
@@ -44,6 +49,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .nugget: URL(string: "https://raw.githubusercontent.com/SerStars/nugget-wallpapers/main/")!
         case .caPlayground: URL(string: "https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
         case .wallive: WalliveAPI.baseURL
+        case .oneNineOne: OneNineOneAPI.baseURL
         }
     }
 }
@@ -94,17 +100,22 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
     var id: String { "\(source.rawValue):\(url)" }
     /// Wallive items keep their direct media link (absolute) in `url`,
     /// unlike the catalog sources, whose `url` is a package path relative
-    /// to the source's base URL.
+    /// to the source's base URL. 191 items keep their absolute detail
+    /// page URL in `url` (the pan share links are fetched from that page
+    /// on demand, not downloaded directly).
     nonisolated var downloadURL: URL {
         if source == .wallive { return WalliveAPI.resolve(url) }
+        if source == .oneNineOne { return OneNineOneAPI.resolve(url) }
         return source.packageBaseURL.appending(path: url)
     }
     nonisolated var downloadCandidates: [URL] {
         if source == .wallive { return [downloadURL] }
+        if source == .oneNineOne { return [downloadURL] }
         return [downloadURL, source.directPackageBaseURL.appending(path: url)]
     }
     nonisolated var previewURL: URL {
         if source == .wallive { return WalliveAPI.resolve(preview) }
+        if source == .oneNineOne { return OneNineOneAPI.resolve(preview) }
         return source.assetBaseURL.appending(path: preview)
     }
 
@@ -202,6 +213,8 @@ struct WallpaperCatalog: Sendable {
                 .map(\.wallpaper)
         case .wallive:
             return try await WalliveCatalog.fetchAll(refresh: refresh)
+        case .oneNineOne:
+            return try await OneNineOneCatalog.fetchAll(refresh: refresh)
         }
     }
 

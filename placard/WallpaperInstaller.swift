@@ -281,7 +281,7 @@ private actor WallpaperInstaller {
         throw InstallError.deviceRequired
         #else
         guard WorseQuery.isAvailable else { throw InstallError.unsupportedSystem }
-        guard sourceURL.pathExtension.lowercased() == "tendies" else {
+        guard ["tendies", "tendiex"].contains(sourceURL.pathExtension.lowercased()) else {
             throw InstallError.unsupportedPackageType
         }
 
@@ -332,7 +332,12 @@ private actor WallpaperInstaller {
             throw InstallError.packageTooLarge
         }
 
-        let destination = workspace.appending(path: "wallpaper.\(sourceURL.pathExtension.lowercased())")
+        // A `.tendiex` package is installed through the same `.tendies`
+        // installer: normalize the extension so the extractor and
+        // descriptor search see a `.tendies` package. (Whether a given
+        // `.tendiex` file uses the same zip layout is decided by the
+        // install itself — a mismatch fails as an invalid package.)
+        let destination = workspace.appending(path: "wallpaper.tendies")
         try fileManager.copyItem(at: sourceURL, to: destination)
         return destination
     }

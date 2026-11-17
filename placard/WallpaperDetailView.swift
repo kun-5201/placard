@@ -2,11 +2,15 @@ import SwiftUI
 
 struct WallpaperDetailView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     let wallpaper: Wallpaper
     let showsAuthor: Bool
     let transitionNamespace: Namespace.ID
     @State private var installer = InstallCoordinator()
+    @State private var panLinks: OneNineOneDownloadLinks?
+    @State private var panLinksLoading = false
+    @State private var panLinksError: String?
 
     var body: some View {
         ScrollView {
@@ -28,7 +32,22 @@ struct WallpaperDetailView: View {
             .padding(.bottom, 24)
         }
         .safeAreaInset(edge: .bottom) {
-            InstallBar(state: installer.state, onInstall: install)
+            if wallpaper.source == .oneNineOne {
+                OneNineOneDownloadBar(
+                    links: panLinks,
+                    isLoading: panLinksLoading,
+                    error: panLinksError,
+                    onRetry: { Task { await loadPanLinks() } },
+                    onOpen: { openURL($0) }
+                )
+            } else {
+                InstallBar(state: installer.state, onInstall: install)
+            }
+        }
+        .task {
+            if wallpaper.source == .oneNineOne {
+                await loadPanLinks()
+            }
         }
         .background(Color(uiColor: .systemBackground).ignoresSafeArea())
         .navigationTitle("Preview")
@@ -78,9 +97,27 @@ struct WallpaperDetailView: View {
     private func install() {
         if wallpaper.source == .wallive {
             installer.installWallive(wallpaper)
+        } else if wallpaper.source == .oneNineOne {
+            // 191 wallpapers are not installed directly: their files live
+            // on Quark / Baidu Pan, so the bottom bar opens the pan link
+            // instead and the user imports the downloaded package.
+            return
         } else {
             installer.install(wallpaper)
         }
+    }
+
+    /// Fetches a 191 wallpaper's pan share links from its detail page.
+    private func loadPanLinks() async {
+        guard panLinks == nil, !panLinksLoading else { return }
+        panLinksLoading = true
+        panLinksError = nil
+        do {
+            panLinks = try await OneNineOneCatalog.fetchDownloadLinks(for: wallpaper)
+        } catch {
+            panLinksError = error.localizedDescription
+        }
+        panLinksLoading = false
     }
 
     private var isCancellable: Bool {
@@ -212,6 +249,88 @@ private struct InstallBar: View {
         .padding(.horizontal, 16)
         .padding(.top, 10)
         .padding(.bottom, 8)
+    }
+}
+
+/// Bottom bar for a 191壁纸 item: the package lives on Quark / Baidu
+/// Pan, so there is no direct install — the bar opens the pan share
+/// link and tells the user to import the downloaded file from Browse.
+/// `.tendiex` is the standard format (Baidu link first); a `.tendies`
+/// file (Quark link) is offered as an alternate only when the site
+/// provides one.
+private struct OneNineOneDownloadBar: View {
+    let links: OneNineOneDownloadLinks?
+    let isLoading: Bool
+    let error: String?
+    let onRetry: () -> Void
+    let onOpen: (URL) -> Void
+
+    var body: some View {
+        VStack(spacing: 8) {
+            if isLoading {
+                ProgressView("正在获取下载链接…")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+            } else if let error {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                Button("重试", action: onRetry)
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+            } else if let links {
+                if let tendiexURL = links.tendiexURL {
+                    Button {
+                        onOpen(tendiexURL)
+                    } label: {
+                        Label("下载 .tendiex（百度网盘）", systemImage: "arrow.down.circle.fill")
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                }
+                if let tendiesURL = links.tendiesURL {
+                    Button {
+                        onOpen(tendiesURL)
+                    } label: {
+                        Label(
+                            links.tendiexURL == nil ? "下载 .tendies（夸克云盘）" : "下载 .tendies（夸克云盘，备用）",
+                            systemImage: "arrow.down.circle"
+                        )
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glass)
+                    .controlSize(.large)
+                }
+                if links.tendiexURL == nil, links.tendiesURL == nil {
+                    Text("暂无下载链接")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                Text(downloadNote(for: links))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+    }
+
+    private func downloadNote(for links: OneNineOneDownloadLinks) -> String {
+        var note = ""
+        if let price = links.priceLabel {
+            note += "付费 \(price)，请先在 191.bz 购买。"
+        }
+        note += "在网盘 App 里下载文件后，回到 Browse → Import Wallpaper 安装。"
+        return note
     }
 }
 
