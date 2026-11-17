@@ -5,6 +5,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
     case nugget
     case apple
     case wallive
+    case camlo
 
     var id: Self { self }
 
@@ -14,6 +15,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
         case .nugget: "Nugget"
         case .apple: "Apple"
         case .wallive: "Wallive"
+        case .camlo: "Camlo"
         }
     }
 }
@@ -22,12 +24,14 @@ enum WallpaperSource: String, Codable, Sendable {
     case nugget
     case caPlayground
     case wallive
+    case camlo
 
     nonisolated var assetBaseURL: URL {
         switch self {
         case .nugget: WallpaperCatalog.nuggetAssetBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundAssetBaseURL
         case .wallive: WalliveAPI.baseURL
+        case .camlo: WallpaperCatalog.camloAssetBaseURL
         }
     }
 
@@ -36,6 +40,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .nugget: WallpaperCatalog.nuggetPackageBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundPackageBaseURL
         case .wallive: WalliveAPI.baseURL
+        case .camlo: WallpaperCatalog.camloPackageBaseURL
         }
     }
 
@@ -44,6 +49,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .nugget: URL(string: "https://raw.githubusercontent.com/SerStars/nugget-wallpapers/main/")!
         case .caPlayground: URL(string: "https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
         case .wallive: WalliveAPI.baseURL
+        case .camlo: URL(string: "https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
         }
     }
 }
@@ -173,6 +179,8 @@ struct WallpaperCatalog: Sendable {
     nonisolated static let nuggetPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/SerStars/nugget-wallpapers/main/")!
     nonisolated static let caPlaygroundAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/CAPlayground/wallpapers@main/")!
     nonisolated static let caPlaygroundPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
+    nonisolated static let camloAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/Kianuni/Camlo@main/")!
+    nonisolated static let camloPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
 
     var fetch: @Sendable (WallpaperCollection, CatalogFetchPolicy) async throws -> [Wallpaper]
 
@@ -202,6 +210,13 @@ struct WallpaperCatalog: Sendable {
                 .map(\.wallpaper)
         case .wallive:
             return try await WalliveCatalog.fetchAll(refresh: refresh)
+        case .camlo:
+            let data = try await RemoteAssetCache.shared.data(
+                for: camloAssetBaseURL.appending(path: "wallpapers/catalog.json"),
+                refresh: refresh
+            )
+            let response = try JSONDecoder().decode(CamloCatalogResponse.self, from: data)
+            return response.packs.map(\.wallpaper)
         }
     }
 
@@ -226,6 +241,49 @@ struct WallpaperCatalog: Sendable {
 
 private struct CAPlaygroundCatalogResponse: Decodable {
     let wallpapers: [CAPlaygroundWallpaper]
+}
+
+private struct CamloCatalogResponse: Decodable {
+    let packs: [CamloPack]
+}
+
+/// One entry of Kianuni/Camlo `wallpapers/catalog.json`
+/// (schemaVersion 1, 60 packs). `packagePath` is a direct `.tendies`
+/// path under the repo root, `thumbPath` a preview image, `tagsZh`
+/// the Chinese tag list shown in the description.
+private struct CamloPack: Decodable {
+    let titleZh: String?
+    let titleEn: String?
+    let subtitleZh: String?
+    let badgeZh: String?
+    let tagsZh: [String]?
+    let packagePath: String
+    let thumbPath: String?
+
+    nonisolated var wallpaper: Wallpaper {
+        let name: String
+        if let titleZh, !titleZh.isEmpty {
+            name = titleZh
+        } else if let titleEn, !titleEn.isEmpty {
+            name = titleEn
+        } else {
+            name = (packagePath as NSString).lastPathComponent
+        }
+        var parts: [String] = []
+        if let badgeZh, !badgeZh.isEmpty { parts.append(badgeZh) }
+        if let tagsZh, !tagsZh.isEmpty { parts.append(tagsZh.joined(separator: " · ")) }
+        if let subtitleZh, !subtitleZh.isEmpty { parts.append(subtitleZh) }
+        return Wallpaper(
+            remoteID: nil,
+            name: name,
+            description: parts.isEmpty ? nil : parts.joined(separator: " — "),
+            url: packagePath,
+            preview: thumbPath ?? packagePath,
+            authors: nil,
+            contest: nil,
+            source: .camlo
+        )
+    }
 }
 
 private struct CAPlaygroundWallpaper: Decodable {

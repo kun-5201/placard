@@ -146,7 +146,7 @@ struct WallpaperBrowserView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .frame(width: 250)
+                    .frame(width: 320)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
