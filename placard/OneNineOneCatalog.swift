@@ -122,7 +122,8 @@ enum OneNineOneCatalog: Sendable {
     /// JSON-LD block and the embedded page data are merged by slug.
     private static func parseListPage(_ html: String) -> [Wallpaper] {
         var cards: [String: CardInfo] = [:]
-        for article in matches(#"<article\b.*?</article>"#, in: html, dotMatchesLineSeparators: true) {
+        for articleMatch in matches(#"<article\b.*?</article>"#, in: html, dotMatchesLineSeparators: true) {
+            guard let article = articleMatch.first else { continue }
             guard let slug = firstMatch(#"href="/tendies-wallpaper/([^"]+)""#, in: article) else { continue }
             cards[slug] = CardInfo(
                 format: firstMatch(#">(TENDIES|TENDIEX)<"#, in: article),
