@@ -77,9 +77,7 @@ private enum AppTab: Hashable {
 }
 
 struct WallpaperBrowserView: View {
-    /// 191壁纸的 .tendiex 文件和 .tendies 一样是可安装的包
-    /// （导入时按 .tendies 处理，见 WallpaperInstaller）。
-    private static let importablePackageTypes = ["tendies", "tendiex"].compactMap {
+    private static let importablePackageTypes = ["tendies"].compactMap {
         UTType(filenameExtension: $0, conformingTo: .data)
     }
 
@@ -148,7 +146,7 @@ struct WallpaperBrowserView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .frame(width: 300)
+                    .frame(width: 250)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
