@@ -7,27 +7,17 @@
 Browse, create, install, and manage PosterBoard wallpapers on iOS.
 
 - Browse community wallpapers and import `.tendies` packages
-- Browse Wallive wallpapers and install them directly (video and stills)
 - Create video wallpapers from clips up to 12 seconds
 - View and delete installed wallpapers
 - English and Simplified Chinese
 
-## Wallive
+## Win97
 
-The Browse tab has a Wallive collection backed by the public list API
-at `wall-api.18ir.cn/api/get_wallpaper.php` (same list shape as the
-older `walllive.18ir.cn` host, which now serves only a single
-announcement card; the full catalog — 427 items — lives on `wall-api`,
-as used by the Wallive 1.2 app). Wallive serves raw media
-(mp4 / images) rather than `.tendies` packages, so installing one
-builds a `.tendies` package on-device first — the mp4's frames become
-a `LayeredAnimation` descriptor, the same layout wallive-unlock's
-`make_tendies_offline.py` builds — then installs it through Placard's
-`.tendies` installer. Clips longer than 12 seconds are trimmed, and
-still images are rendered into a short looping clip first. The API mapping
-follows [lty5201/wallive-unlock](https://github.com/lty5201/wallive-unlock),
-which resolves the same endpoint to direct media links and builds
-`.tendies` packages from them.
+The Browse tab has a Win97 collection: 12 wallpapers from
+[zylovehh/win97](https://github.com/zylovehh/win97) (`catalog.json`,
+8 items, plus 4 files present in the repo but not in the catalog).
+All of them are direct `.tendies` downloads, installed through
+Placard's `.tendies` installer like any other collection.
 
 <p align="center">
   <img src="docs/images/browse-custom.png" width="360" alt="Wallpaper browser">

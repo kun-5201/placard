@@ -4,7 +4,6 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
     case caPlayground
     case nugget
     case apple
-    case wallive
     case camlo
     case win97
 
@@ -15,7 +14,6 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
         case .caPlayground: "CAP"
         case .nugget: "Nugget"
         case .apple: "Apple"
-        case .wallive: "Wallive"
         case .camlo: "Camlo"
         case .win97: "Win97"
         }
@@ -25,7 +23,6 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
 enum WallpaperSource: String, Codable, Sendable {
     case nugget
     case caPlayground
-    case wallive
     case camlo
     case win97
 
@@ -33,7 +30,6 @@ enum WallpaperSource: String, Codable, Sendable {
         switch self {
         case .nugget: WallpaperCatalog.nuggetAssetBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundAssetBaseURL
-        case .wallive: WalliveAPI.baseURL
         case .camlo: WallpaperCatalog.camloAssetBaseURL
         case .win97: WallpaperCatalog.win97AssetBaseURL
         }
@@ -43,7 +39,6 @@ enum WallpaperSource: String, Codable, Sendable {
         switch self {
         case .nugget: WallpaperCatalog.nuggetPackageBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundPackageBaseURL
-        case .wallive: WalliveAPI.baseURL
         case .camlo: WallpaperCatalog.camloPackageBaseURL
         case .win97: WallpaperCatalog.win97PackageBaseURL
         }
@@ -53,7 +48,6 @@ enum WallpaperSource: String, Codable, Sendable {
         switch self {
         case .nugget: URL(string: "https://raw.githubusercontent.com/SerStars/nugget-wallpapers/main/")!
         case .caPlayground: URL(string: "https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
-        case .wallive: WalliveAPI.baseURL
         case .camlo: URL(string: "https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
         case .win97: URL(string: "https://raw.githubusercontent.com/zylovehh/win97/main/")!
         }
@@ -104,19 +98,14 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
     let source: WallpaperSource
 
     var id: String { "\(source.rawValue):\(url)" }
-    /// Wallive items keep their direct media link (absolute) in `url`,
-    /// unlike the catalog sources, whose `url` is a package path relative
-    /// to the source's base URL.
+    /// `url` is a package path relative to the source's base URL.
     nonisolated var downloadURL: URL {
-        if source == .wallive { return WalliveAPI.resolve(url) }
         return source.packageBaseURL.appending(path: url)
     }
     nonisolated var downloadCandidates: [URL] {
-        if source == .wallive { return [downloadURL] }
         return [downloadURL, source.directPackageBaseURL.appending(path: url)]
     }
     nonisolated var previewURL: URL {
-        if source == .wallive { return WalliveAPI.resolve(preview) }
         return source.assetBaseURL.appending(path: preview)
     }
 
@@ -216,8 +205,6 @@ struct WallpaperCatalog: Sendable {
             return response.wallpapers
                 .sorted { $0.date < $1.date }
                 .map(\.wallpaper)
-        case .wallive:
-            return try await WalliveCatalog.fetchAll(refresh: refresh)
         case .camlo:
             let data = try await RemoteAssetCache.shared.data(
                 for: camloAssetBaseURL.appending(path: "wallpapers/catalog.json"),

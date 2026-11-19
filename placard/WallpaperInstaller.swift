@@ -46,54 +46,6 @@ final class InstallCoordinator {
         }
     }
 
-    /// Installs a Wallive wallpaper. Its media is a raw mp4 / image, not
-    /// a `.tendies` package, so the media is first turned into a local
-    /// video (downloaded, trimmed to the 12-second cap, or rendered from
-    /// the still) and then built into a genuine `.tendies` package on
-    /// device — an 8 fps JPEG frame sequence in a `LayeredAnimation`
-    /// descriptor, the same layout wallive-unlock's
-    /// `make_tendies_offline.py` builds — which installs through the
-    /// same `.tendies` installer as a downloaded package.
-    func installWallive(_ wallpaper: Wallpaper) {
-        guard !state.isWorking else { return }
-        task?.cancel()
-        state = .downloading(0)
-        task = Task { [self] in
-            do {
-                let workspace = FileManager.default.temporaryDirectory
-                    .appending(path: "Placard-Wallive-\(UUID().uuidString)", directoryHint: .isDirectory)
-                try FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true)
-                defer { try? FileManager.default.removeItem(at: workspace) }
-
-                let localVideo = try await WalliveVideoPrep.localVideo(for: wallpaper, in: workspace) { [weak self] fraction in
-                    Task { @MainActor in
-                        self?.state = .downloading(fraction)
-                    }
-                }
-                try Task.checkCancellation()
-
-                state = .importing
-                let packageURL = try await WalliveTendiesBuilder.build(
-                    from: localVideo,
-                    wallpaperID: wallpaper.remoteID ?? Int.random(in: 10_000...99_999),
-                    name: wallpaper.name,
-                    in: workspace
-                )
-                try Task.checkCancellation()
-
-                try await installer.install(packageAt: packageURL) { [weak self] phase in
-                    self?.state = phase
-                }
-                finishInstallation()
-            } catch is CancellationError {
-                state = .idle
-            } catch {
-                reportInstallFailure(error)
-                state = .failure(error.localizedDescription)
-            }
-        }
-    }
-
     func install(packagesAt packageURLs: [URL]) {
         guard !state.isWorking else { return }
         task?.cancel()

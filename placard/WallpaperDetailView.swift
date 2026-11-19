@@ -76,11 +76,7 @@ struct WallpaperDetailView: View {
     }
 
     private func install() {
-        if wallpaper.source == .wallive {
-            installer.installWallive(wallpaper)
-        } else {
-            installer.install(wallpaper)
-        }
+        installer.install(wallpaper)
     }
 
     private var isCancellable: Bool {
