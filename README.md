@@ -11,22 +11,26 @@ Browse, create, install, and manage PosterBoard wallpapers on iOS.
 - View and delete installed wallpapers
 - English and Simplified Chinese
 
-## Win97
+## kun
 
-The Browse tab has a Win97 collection: the full 壁纸匣 catalog from
+The Browse tab has a kun collection: the full 壁纸匣 catalog from
 [zylovehh/wallive-catalog](https://github.com/zylovehh/wallive-catalog)
 (`catalog.json`, 186 items: 174 iPhone + 12 iPad), plus 4 files present
 in [zylovehh/win97](https://github.com/zylovehh/win97)'s `wallpapers/`
 but in neither catalog (aurora-snow, mist-forest, night-mountains,
 sunset-sea) — 190 items in total. All of them are direct `.tendies`
 downloads, installed through Placard's `.tendies` installer like any
-other collection. The catalog is fetched fresh every time the Win97 tab
+other collection. The catalog is fetched fresh every time the kun tab
 opens (with a timestamp cache-buster, the same trick the 壁纸匣 app
 uses), so new wallpapers the author adds to the catalog show up in
 Placard without an app update. Note the catalog packages are
 WALLIVE1-encrypted (HKDF + AES-GCM, see `Wallive1Crypto.swift`, ported
 from zylovehh/win97), not plain ZIPs: Placard decrypts them on download
 before installing, so they install like any other `.tendies` package.
+The catalog also carries a preview video (mp4) for most items: the
+detail page plays it muted on a loop over the still thumbnail, so you
+see the wallpaper move before installing (items without a preview
+video just show the still).
 
 <p align="center">
   <img src="docs/images/browse-custom.png" width="360" alt="Wallpaper browser">

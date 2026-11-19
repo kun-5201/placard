@@ -123,6 +123,11 @@ private struct WallpaperHero: View {
             playback: .animated
         )
             .overlay {
+                if let videoURL = wallpaper.previewVideoURL {
+                    PreviewVideoView(url: videoURL)
+                }
+            }
+            .overlay {
                 LinearGradient(
                     colors: [.clear, .clear, .black.opacity(0.82)],
                     startPoint: .top,

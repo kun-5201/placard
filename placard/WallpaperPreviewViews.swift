@@ -1,3 +1,4 @@
+import AVFoundation
 import ImageIO
 import SwiftUI
 import UIKit
@@ -315,5 +316,62 @@ nonisolated private final class ImageCache: @unchecked Sendable {
 
     func insert(_ image: UIImage, for key: NSString) {
         values.setObject(image, forKey: key)
+    }
+}
+
+/// Muted, looping video preview (the kun catalog's mp4 previews).
+/// Streams the preview video, plays automatically, loops forever, no
+/// controls, no sound, never keeps the screen awake. When the video
+/// cannot load the layer stays transparent and the still image below
+/// it shows through.
+struct PreviewVideoView: UIViewRepresentable {
+    let url: URL
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> PlayerView {
+        let view = PlayerView()
+        let player = AVPlayer()
+        player.isMuted = true
+        player.preventsDisplaySleepDuringVideoPlayback = false
+        context.coordinator.looper = AVPlayerLooper(
+            player: player,
+            templateItem: AVPlayerItem(url: url)
+        )
+        view.player = player
+        player.play()
+        return view
+    }
+
+    func updateUIView(_ uiView: PlayerView, context: Context) {}
+
+    func dismantleUIView(_ uiView: PlayerView, coordinator: Coordinator) {
+        uiView.player?.pause()
+        coordinator.looper = nil
+        uiView.player = nil
+    }
+
+    final class Coordinator {
+        var looper: AVPlayerLooper?
+    }
+
+    final class PlayerView: UIView {
+        override static var layerClass: AnyClass { AVPlayerLayer.self }
+
+        var player: AVPlayer? {
+            get { (layer as? AVPlayerLayer)?.player }
+            set { (layer as? AVPlayerLayer)?.player = newValue }
+        }
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            (layer as? AVPlayerLayer)?.videoGravity = .resizeAspectFill
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
     }
 }

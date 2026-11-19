@@ -5,7 +5,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
     case nugget
     case apple
     case camlo
-    case win97
+    case kun
 
     var id: Self { self }
 
@@ -15,7 +15,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
         case .nugget: "Nugget"
         case .apple: "Apple"
         case .camlo: "Camlo"
-        case .win97: "Win97"
+        case .kun: "kun"
         }
     }
 }
@@ -24,16 +24,16 @@ enum WallpaperSource: String, Codable, Sendable {
     case nugget
     case caPlayground
     case camlo
-    case win97
-    case win97Extra
+    case kun
+    case kunExtra
 
     nonisolated var assetBaseURL: URL {
         switch self {
         case .nugget: WallpaperCatalog.nuggetAssetBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundAssetBaseURL
         case .camlo: WallpaperCatalog.camloAssetBaseURL
-        case .win97: WallpaperCatalog.win97AssetBaseURL
-        case .win97Extra: WallpaperCatalog.win97ExtraAssetBaseURL
+        case .kun: WallpaperCatalog.kunAssetBaseURL
+        case .kunExtra: WallpaperCatalog.kunExtraAssetBaseURL
         }
     }
 
@@ -42,8 +42,8 @@ enum WallpaperSource: String, Codable, Sendable {
         case .nugget: WallpaperCatalog.nuggetPackageBaseURL
         case .caPlayground: WallpaperCatalog.caPlaygroundPackageBaseURL
         case .camlo: WallpaperCatalog.camloPackageBaseURL
-        case .win97: WallpaperCatalog.win97PackageBaseURL
-        case .win97Extra: WallpaperCatalog.win97ExtraPackageBaseURL
+        case .kun: WallpaperCatalog.kunPackageBaseURL
+        case .kunExtra: WallpaperCatalog.kunExtraPackageBaseURL
         }
     }
 
@@ -52,8 +52,8 @@ enum WallpaperSource: String, Codable, Sendable {
         case .nugget: URL(string: "https://raw.githubusercontent.com/SerStars/nugget-wallpapers/main/")!
         case .caPlayground: URL(string: "https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
         case .camlo: URL(string: "https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
-        case .win97: URL(string: "https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
-        case .win97Extra: URL(string: "https://raw.githubusercontent.com/zylovehh/win97/main/")!
+        case .kun: URL(string: "https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
+        case .kunExtra: URL(string: "https://raw.githubusercontent.com/zylovehh/win97/main/")!
         }
     }
 }
@@ -97,6 +97,10 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
     let description: String?
     let url: String
     let preview: String
+    /// Relative path of the preview video (mp4), when the source catalog
+    /// has one (the kun catalog's `preview` field). Nil for sources
+    /// without a video preview; the detail view falls back to the image.
+    let previewVideo: String?
     let authors: String?
     let contest: String?
     let source: WallpaperSource
@@ -112,10 +116,14 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
     nonisolated var previewURL: URL {
         return source.assetBaseURL.appending(path: preview)
     }
+    nonisolated var previewVideoURL: URL? {
+        guard let previewVideo else { return nil }
+        return source.assetBaseURL.appending(path: previewVideo)
+    }
 
     enum CodingKeys: String, CodingKey {
         case remoteID = "id"
-        case name, description, url, preview, authors, contest, source
+        case name, description, url, preview, previewVideo, authors, contest, source
     }
 
     nonisolated init(
@@ -124,6 +132,7 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
         description: String?,
         url: String,
         preview: String,
+        previewVideo: String? = nil,
         authors: String?,
         contest: String?,
         source: WallpaperSource
@@ -133,6 +142,7 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
         self.description = description
         self.url = url
         self.preview = preview
+        self.previewVideo = previewVideo
         self.authors = authors
         self.contest = contest
         self.source = source
@@ -145,6 +155,7 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
         description = try container.decodeIfPresent(String.self, forKey: .description)
         url = try container.decode(String.self, forKey: .url)
         preview = try container.decode(String.self, forKey: .preview)
+        previewVideo = try container.decodeIfPresent(String.self, forKey: .previewVideo)
         authors = try container.decodeIfPresent(String.self, forKey: .authors)
         contest = try container.decodeIfPresent(String.self, forKey: .contest)
         source = try container.decodeIfPresent(WallpaperSource.self, forKey: .source) ?? .nugget
@@ -180,10 +191,10 @@ struct WallpaperCatalog: Sendable {
     nonisolated static let caPlaygroundPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
     nonisolated static let camloAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/Kianuni/Camlo@main/")!
     nonisolated static let camloPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
-    nonisolated static let win97AssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/wallive-catalog@main/")!
-    nonisolated static let win97PackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
-    nonisolated static let win97ExtraAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/win97@main/")!
-    nonisolated static let win97ExtraPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/win97/main/")!
+    nonisolated static let kunAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/wallive-catalog@main/")!
+    nonisolated static let kunPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
+    nonisolated static let kunExtraAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/win97@main/")!
+    nonisolated static let kunExtraPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/win97/main/")!
 
     var fetch: @Sendable (WallpaperCollection, CatalogFetchPolicy) async throws -> [Wallpaper]
 
@@ -218,14 +229,14 @@ struct WallpaperCatalog: Sendable {
             )
             let response = try JSONDecoder().decode(CamloCatalogResponse.self, from: data)
             return response.packs.map(\.wallpaper)
-        case .win97:
-            // Timestamp cache-buster, same trick as the Win97 app itself:
+        case .kun:
+            // Timestamp cache-buster, same trick as the 壁纸匣 app itself:
             // the catalog is fetched through a CDN mirror, and a fresh
             // query string keeps both the local cache and the CDN from
             // serving a stale catalog after the author pushes new
             // wallpapers. Every fetch therefore sees the latest catalog.
             var components = URLComponents(
-                url: win97AssetBaseURL.appending(path: "catalog.json"),
+                url: kunAssetBaseURL.appending(path: "catalog.json"),
                 resolvingAgainstBaseURL: false
             )!
             components.queryItems = [
@@ -235,8 +246,8 @@ struct WallpaperCatalog: Sendable {
                 for: components.url!,
                 refresh: refresh
             )
-            let response = try JSONDecoder().decode(Win97CatalogResponse.self, from: data)
-            return response.items.map(\.wallpaper) + Win97CatalogResponse.extras
+            let response = try JSONDecoder().decode(KunCatalogResponse.self, from: data)
+            return response.items.map(\.wallpaper) + KunCatalogResponse.extras
         }
     }
 
@@ -309,9 +320,9 @@ private struct CamloPack: Decodable {
 /// The 壁纸匣 app's real catalog lives in a separate repo,
 /// zylovehh/wallive-catalog (186 items, 2026-11-19: 174 iPhone + 12 iPad),
 /// not in zylovehh/win97's own catalog.json (only 8 sample entries).
-/// The app fetches it from the same repo (see Win97's CatalogModel.swift).
-private struct Win97CatalogResponse: Decodable {
-    let items: [Win97Item]
+/// The app fetches it from the same repo (see the 壁纸匣 app's CatalogModel.swift).
+private struct KunCatalogResponse: Decodable {
+    let items: [KunCatalogItem]
 
     /// Files present in zylovehh/win97 `wallpapers/` but in neither
     /// catalog (2026-11-19). Same layout, thumbnails live next to the
@@ -330,19 +341,21 @@ private struct Win97CatalogResponse: Decodable {
             preview: thumb,
             authors: nil,
             contest: nil,
-            source: .win97Extra
+            source: .kunExtra
         )
     }
 }
 
-/// One entry of zylovehh/wallive-catalog `catalog.json`. `package` and
-/// `thumbnail` are absolute jsDelivr URLs; the app only needs the path
-/// under the repo root, so the known prefix is stripped.
-private struct Win97Item: Decodable {
+/// One entry of zylovehh/wallive-catalog `catalog.json`. `package`,
+/// `thumbnail` and `preview` are absolute jsDelivr URLs; the app only
+/// needs the path under the repo root, so the known prefix is stripped.
+/// `preview` is the preview video (mp4); some items have none.
+private struct KunCatalogItem: Decodable {
     let id: String?
     let title: String?
     let tags: [String]?
     let thumbnail: String
+    let preview: String?
     let package: String
 
     nonisolated var wallpaper: Wallpaper {
@@ -358,9 +371,10 @@ private struct Win97Item: Decodable {
             description: tags?.isEmpty == false ? tags!.joined(separator: " · ") : nil,
             url: Self.relativePath(package),
             preview: Self.relativePath(thumbnail),
+            previewVideo: preview.map(Self.relativePath),
             authors: nil,
             contest: nil,
-            source: .win97
+            source: .kun
         )
     }
 

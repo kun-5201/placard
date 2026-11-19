@@ -241,11 +241,11 @@ struct WallpaperBrowserView: View {
     /// Initial load / collection change: show the loading grid, then fetch.
     private func loadIfNeeded(_ targetCollection: WallpaperCollection) async {
         guard loadedCollection != targetCollection else {
-            // Win97's catalog lives in a repo the author updates directly:
+            // kun's catalog lives in a repo the author updates directly:
             // silently refresh it every time the tab opens, so new
             // wallpapers show up without a pull-to-refresh. A failed
             // refresh quietly keeps the existing list (see fetch).
-            if targetCollection == .win97 {
+            if targetCollection == .kun {
                 await refresh()
             }
             return
