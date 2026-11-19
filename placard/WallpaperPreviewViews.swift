@@ -333,7 +333,7 @@ struct PreviewVideoView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> PlayerView {
         let view = PlayerView()
-        let player = AVPlayer()
+        let player = AVQueuePlayer()
         player.isMuted = true
         player.preventsDisplaySleepDuringVideoPlayback = false
         context.coordinator.looper = AVPlayerLooper(
