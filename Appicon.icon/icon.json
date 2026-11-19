@@ -1,50 +1,50 @@
 {
-  "fill" : "system-light",
-  "groups" : [
+  "fill": "system-light",
+  "groups": [
     {
-      "hidden" : false,
-      "layers" : [
+      "hidden": false,
+      "layers": [
         {
-          "fill" : {
-            "linear-gradient" : [
+          "fill": {
+            "linear-gradient": [
               "display-p3:0.53725,0.66667,1.00000,0.67000",
               "srgb:0.94902,0.63529,0.80392,1.00000"
             ],
-            "orientation" : {
-              "start" : {
-                "x" : 0.34964612735215056,
-                "y" : 0.2880121638924456
+            "orientation": {
+              "start": {
+                "x": 0.34964612735215056,
+                "y": 0.2880121638924456
               },
-              "stop" : {
-                "x" : 0.7714161206317204,
-                "y" : 0.7345200464148528
+              "stop": {
+                "x": 0.7714161206317204,
+                "y": 0.7345200464148528
               }
             }
           },
-          "hidden" : false,
-          "image-name" : "theatermask.and.paintbrush.fill.png",
-          "name" : "theatermask.and.paintbrush.fill"
+          "hidden": false,
+          "image-name": "kun-photo.png",
+          "name": "kun-photo"
         }
       ],
-      "refractivity" : {
-        "depth" : 0.3115625,
-        "enabled" : false,
-        "strength" : 0.2645703125
+      "refractivity": {
+        "depth": 0.3115625,
+        "enabled": false,
+        "strength": 0.2645703125
       },
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.6
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0.6
       },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.2
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
       }
     }
   ],
-  "supported-platforms" : {
-    "circles" : [
+  "supported-platforms": {
+    "circles": [
       "watchOS"
     ],
-    "squares" : "shared"
+    "squares": "shared"
   }
 }

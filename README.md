@@ -13,7 +13,8 @@ Browse, create, install, and manage PosterBoard wallpapers on iOS.
 
 ## Support section
 
-The support section is the user's own now: the developer row links
+The app is now called **kun** on the home screen (display name),
+with the user's photo as the app icon. The support section is the
 to the user's X ([king9527ya](https://x.com/king9527ya)) and GitHub
 ([kun-5201](https://github.com/kun-5201)) — no Douyin link — and the
 developer avatar is the user's photo. The donation row reads
