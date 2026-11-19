@@ -13,11 +13,14 @@ Browse, create, install, and manage PosterBoard wallpapers on iOS.
 
 ## Win97
 
-The Browse tab has a Win97 collection: 12 wallpapers from
-[zylovehh/win97](https://github.com/zylovehh/win97) (`catalog.json`,
-8 items, plus 4 files present in the repo but not in the catalog).
-All of them are direct `.tendies` downloads, installed through
-Placard's `.tendies` installer like any other collection.
+The Browse tab has a Win97 collection: the full 壁纸匣 catalog from
+[zylovehh/wallive-catalog](https://github.com/zylovehh/wallive-catalog)
+(`catalog.json`, 186 items: 174 iPhone + 12 iPad), plus 4 files present
+in [zylovehh/win97](https://github.com/zylovehh/win97)'s `wallpapers/`
+but in neither catalog (aurora-snow, mist-forest, night-mountains,
+sunset-sea) — 190 items in total. All of them are direct `.tendies`
+downloads, installed through Placard's `.tendies` installer like any
+other collection.
 
 <p align="center">
   <img src="docs/images/browse-custom.png" width="360" alt="Wallpaper browser">

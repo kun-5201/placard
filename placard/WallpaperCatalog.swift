@@ -25,6 +25,7 @@ enum WallpaperSource: String, Codable, Sendable {
     case caPlayground
     case camlo
     case win97
+    case win97Extra
 
     nonisolated var assetBaseURL: URL {
         switch self {
@@ -32,6 +33,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .caPlayground: WallpaperCatalog.caPlaygroundAssetBaseURL
         case .camlo: WallpaperCatalog.camloAssetBaseURL
         case .win97: WallpaperCatalog.win97AssetBaseURL
+        case .win97Extra: WallpaperCatalog.win97ExtraAssetBaseURL
         }
     }
 
@@ -41,6 +43,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .caPlayground: WallpaperCatalog.caPlaygroundPackageBaseURL
         case .camlo: WallpaperCatalog.camloPackageBaseURL
         case .win97: WallpaperCatalog.win97PackageBaseURL
+        case .win97Extra: WallpaperCatalog.win97ExtraPackageBaseURL
         }
     }
 
@@ -49,7 +52,8 @@ enum WallpaperSource: String, Codable, Sendable {
         case .nugget: URL(string: "https://raw.githubusercontent.com/SerStars/nugget-wallpapers/main/")!
         case .caPlayground: URL(string: "https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
         case .camlo: URL(string: "https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
-        case .win97: URL(string: "https://raw.githubusercontent.com/zylovehh/win97/main/")!
+        case .win97: URL(string: "https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
+        case .win97Extra: URL(string: "https://raw.githubusercontent.com/zylovehh/win97/main/")!
         }
     }
 }
@@ -176,8 +180,10 @@ struct WallpaperCatalog: Sendable {
     nonisolated static let caPlaygroundPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/CAPlayground/wallpapers/main/")!
     nonisolated static let camloAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/Kianuni/Camlo@main/")!
     nonisolated static let camloPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
-    nonisolated static let win97AssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/win97@main/")!
-    nonisolated static let win97PackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/win97/main/")!
+    nonisolated static let win97AssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/wallive-catalog@main/")!
+    nonisolated static let win97PackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
+    nonisolated static let win97ExtraAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/win97@main/")!
+    nonisolated static let win97ExtraPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/win97/main/")!
 
     var fetch: @Sendable (WallpaperCollection, CatalogFetchPolicy) async throws -> [Wallpaper]
 
@@ -288,12 +294,16 @@ private struct CamloPack: Decodable {
     }
 }
 
+/// The 壁纸匣 app's real catalog lives in a separate repo,
+/// zylovehh/wallive-catalog (186 items, 2026-11-19: 174 iPhone + 12 iPad),
+/// not in zylovehh/win97's own catalog.json (only 8 sample entries).
+/// The app fetches it from the same repo (see Win97's CatalogModel.swift).
 private struct Win97CatalogResponse: Decodable {
     let items: [Win97Item]
 
-    /// Files present in zylovehh/win97 `wallpapers/` but not listed in
-    /// the author's catalog.json (2026-11-19). Same layout, thumbnails
-    /// live next to the packages.
+    /// Files present in zylovehh/win97 `wallpapers/` but in neither
+    /// catalog (2026-11-19). Same layout, thumbnails live next to the
+    /// packages; they resolve against the win97 repo, not wallive-catalog.
     nonisolated static let extras: [Wallpaper] = [
         ("极光雪", "wallpapers/aurora-snow.tendies", "wallpapers/aurora-snow-thumb.jpg"),
         ("雾林", "wallpapers/mist-forest.tendies", "wallpapers/mist-forest-thumb.jpg"),
@@ -308,14 +318,14 @@ private struct Win97CatalogResponse: Decodable {
             preview: thumb,
             authors: nil,
             contest: nil,
-            source: .win97
+            source: .win97Extra
         )
     }
 }
 
-/// One entry of zylovehh/win97 `catalog.json` (8 items). `package` and
-/// `thumbnail` are absolute raw.githubusercontent URLs; the app only
-/// needs the path under the repo root, so the known prefix is stripped.
+/// One entry of zylovehh/wallive-catalog `catalog.json`. `package` and
+/// `thumbnail` are absolute jsDelivr URLs; the app only needs the path
+/// under the repo root, so the known prefix is stripped.
 private struct Win97Item: Decodable {
     let id: String?
     let title: String?
@@ -343,8 +353,11 @@ private struct Win97Item: Decodable {
     }
 
     nonisolated static func relativePath(_ absoluteURL: String) -> String {
-        let prefix = "https://raw.githubusercontent.com/zylovehh/win97/main/"
-        if absoluteURL.hasPrefix(prefix) {
+        let prefixes = [
+            "https://fastly.jsdelivr.net/gh/zylovehh/wallive-catalog@main/",
+            "https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/",
+        ]
+        for prefix in prefixes where absoluteURL.hasPrefix(prefix) {
             return String(absoluteURL.dropFirst(prefix.count))
         }
         return "wallpapers/" + (absoluteURL as NSString).lastPathComponent
