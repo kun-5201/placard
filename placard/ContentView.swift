@@ -422,9 +422,8 @@ struct CustomWallpaperView: View {
             Spacer(minLength: 8)
 
             HStack(spacing: 0) {
-                developerSocialLink("X", image: "SocialX", url: "https://x.com/Frs0n_")
-                developerSocialLink("GitHub", image: "SocialGitHub", url: "https://github.com/frs0n")
-                developerSocialLink("抖音", image: "SocialDouyin", url: "https://v.douyin.com/jIfvCCHjwFE")
+                developerSocialLink("X", image: "SocialX", url: "https://x.com/king9527ya")
+                developerSocialLink("GitHub", image: "SocialGitHub", url: "https://github.com/kun-5201")
             }
         }
         .padding(.leading, 16)
@@ -443,23 +442,27 @@ struct CustomWallpaperView: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("SUSS · " + name)
+        .accessibilityLabel("kun · " + name)
     }
 
     private var donationRow: some View {
         DisclosureGroup {
-            Image("DonationCode")
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(maxWidth: 220)
-                .clipShape(.rect(cornerRadius: 12))
-                .frame(maxWidth: .infinity)
-                .padding(.top, 12)
-                .padding(.bottom, 4)
+            Link(destination: URL(string: "https://qr.alipay.com/fkx14272dybkfpkj6nmile0")!) {
+                Image("DonationCode")
+                    .resizable()
+                    .interpolation(.none)
+                    .scaledToFit()
+                    .frame(maxWidth: 220)
+                    .clipShape(.rect(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+            .accessibilityLabel("Alipay 赞赏码，点按打开支付宝")
         } label: {
             Label {
-                Text("Thanks SUSS - WeChat Donation Code")
+                Text("感谢 kun - 赞赏码")
                     .font(.subheadline)
                     .foregroundStyle(.primary)
             } icon: {

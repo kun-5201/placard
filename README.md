@@ -11,6 +11,17 @@ Browse, create, install, and manage PosterBoard wallpapers on iOS.
 - View and delete installed wallpapers
 - English and Simplified Chinese
 
+## Support section
+
+The support section is the user's own now: the developer row links
+to the user's X ([king9527ya](https://x.com/king9527ya)) and GitHub
+([kun-5201](https://github.com/kun-5201)) — no Douyin link — and the
+developer avatar is the user's photo. The donation row reads
+"感谢 kun - 赞赏码" and shows the user's Alipay QR (generated from
+their Alipay collection link, same as Lizi's sponsor row); tapping
+the code opens Alipay directly. The old SUSS WeChat donation code
+is gone.
+
 ## kun
 
 The Browse tab has a kun collection: the full 壁纸匣 catalog from
