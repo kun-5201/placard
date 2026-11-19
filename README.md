@@ -23,7 +23,10 @@ downloads, installed through Placard's `.tendies` installer like any
 other collection. The catalog is fetched fresh every time the Win97 tab
 opens (with a timestamp cache-buster, the same trick the 壁纸匣 app
 uses), so new wallpapers the author adds to the catalog show up in
-Placard without an app update.
+Placard without an app update. Note the catalog packages are
+WALLIVE1-encrypted (HKDF + AES-GCM, see `Wallive1Crypto.swift`, ported
+from zylovehh/win97), not plain ZIPs: Placard decrypts them on download
+before installing, so they install like any other `.tendies` package.
 
 <p align="center">
   <img src="docs/images/browse-custom.png" width="360" alt="Wallpaper browser">

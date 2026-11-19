@@ -198,6 +198,9 @@ private actor WallpaperInstaller {
         }
         try Task.checkCancellation()
 
+        try decryptIfNeeded(packageURL)
+        try Task.checkCancellation()
+
         await progress(.unpacking)
         let extractedURL = try extract(packageURL, into: workspace)
         let descriptorGroups = try findDescriptorGroups(in: extractedURL)
@@ -243,6 +246,9 @@ private actor WallpaperInstaller {
         defer { try? fileManager.removeItem(at: workspace) }
 
         let packageURL = try copyImportedPackage(sourceURL, into: workspace)
+        try Task.checkCancellation()
+
+        try decryptIfNeeded(packageURL)
         try Task.checkCancellation()
 
         await progress(.unpacking)
@@ -381,6 +387,21 @@ private actor WallpaperInstaller {
             throw InstallError.packageTooLarge
         }
         return destination
+    }
+
+    /// WALLIVE1-encrypted packages (the whole wallive-catalog) arrive as
+    /// `WALLIVE1` + AES-GCM ciphertext, not a ZIP — `extract` would reject
+    /// them as an invalid package. Decrypt in place so `extract` sees the
+    /// plaintext ZIP. Plain ZIPs pass through untouched.
+    private func decryptIfNeeded(_ packageURL: URL) throws {
+        let data = try Data(contentsOf: packageURL)
+        guard Wallive1Crypto.isWallive1(data) else { return }
+        do {
+            let plaintext = try Wallive1Crypto.decrypt(data)
+            try plaintext.write(to: packageURL, options: .atomic)
+        } catch {
+            throw InstallError.invalidPackage
+        }
     }
 
     private func extract(_ packageURL: URL, into workspace: URL) throws -> URL {
