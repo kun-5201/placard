@@ -20,7 +20,10 @@ in [zylovehh/win97](https://github.com/zylovehh/win97)'s `wallpapers/`
 but in neither catalog (aurora-snow, mist-forest, night-mountains,
 sunset-sea) — 190 items in total. All of them are direct `.tendies`
 downloads, installed through Placard's `.tendies` installer like any
-other collection.
+other collection. The catalog is fetched fresh every time the Win97 tab
+opens (with a timestamp cache-buster, the same trick the 壁纸匣 app
+uses), so new wallpapers the author adds to the catalog show up in
+Placard without an app update.
 
 <p align="center">
   <img src="docs/images/browse-custom.png" width="360" alt="Wallpaper browser">

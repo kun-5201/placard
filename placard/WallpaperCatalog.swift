@@ -219,8 +219,20 @@ struct WallpaperCatalog: Sendable {
             let response = try JSONDecoder().decode(CamloCatalogResponse.self, from: data)
             return response.packs.map(\.wallpaper)
         case .win97:
+            // Timestamp cache-buster, same trick as the Win97 app itself:
+            // the catalog is fetched through a CDN mirror, and a fresh
+            // query string keeps both the local cache and the CDN from
+            // serving a stale catalog after the author pushes new
+            // wallpapers. Every fetch therefore sees the latest catalog.
+            var components = URLComponents(
+                url: win97AssetBaseURL.appending(path: "catalog.json"),
+                resolvingAgainstBaseURL: false
+            )!
+            components.queryItems = [
+                URLQueryItem(name: "ts", value: String(Int(Date().timeIntervalSince1970)))
+            ]
             let data = try await RemoteAssetCache.shared.data(
-                for: win97AssetBaseURL.appending(path: "catalog.json"),
+                for: components.url!,
                 refresh: refresh
             )
             let response = try JSONDecoder().decode(Win97CatalogResponse.self, from: data)
