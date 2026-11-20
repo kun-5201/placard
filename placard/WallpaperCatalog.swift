@@ -123,11 +123,16 @@ struct Wallpaper: Codable, Identifiable, Equatable, Sendable {
     let source: WallpaperSource
 
     var id: String { "\(source.rawValue):\(url)" }
-    /// `url` is a package path relative to the source's base URL.
+    /// `url` is a package path relative to the source's base URL,
+    /// except for the 14 oversize 收藏 items whose packages live as
+    /// Release attachments (tag oversize-1): those keep the absolute
+    /// download URL, which `relativePath` passes through unchanged.
     nonisolated var downloadURL: URL {
+        if url.hasPrefix("https://") { return URL(string: url)! }
         return source.packageBaseURL.appending(path: url)
     }
     nonisolated var downloadCandidates: [URL] {
+        if url.hasPrefix("https://") { return [downloadURL] }
         return [downloadURL, source.directPackageBaseURL.appending(path: url)]
     }
     nonisolated var previewURL: URL {
@@ -422,6 +427,12 @@ private struct KunCatalogItem: Decodable {
     }
 
     nonisolated static func relativePath(_ absoluteURL: String) -> String {
+        // Release attachments (the 14 oversize 收藏 wallpapers, tag
+        // oversize-1) are not under any repo base URL: keep the absolute
+        // download URL as-is so `downloadURL` can use it directly.
+        if absoluteURL.hasPrefix("https://github.com/kun-5201/wallpapers/releases/download/") {
+            return absoluteURL
+        }
         let prefixes = [
             "https://fastly.jsdelivr.net/gh/zylovehh/wallive-catalog@main/",
             "https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/",
