@@ -245,7 +245,8 @@ struct WallpaperBrowserView: View {
             // silently refresh it every time the tab opens, so new
             // wallpapers show up without a pull-to-refresh. A failed
             // refresh quietly keeps the existing list (see fetch).
-            if targetCollection == .kun {
+            // Same for 收藏, whose catalog lives in kun-5201/wallpapers.
+            if targetCollection.refreshesOnOpen {
                 await refresh()
             }
             return

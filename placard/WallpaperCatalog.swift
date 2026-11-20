@@ -6,6 +6,7 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
     case apple
     case camlo
     case kun
+    case favorites
 
     var id: Self { self }
 
@@ -16,6 +17,18 @@ enum WallpaperCollection: String, CaseIterable, Identifiable, Sendable {
         case .apple: "Apple"
         case .camlo: "Camlo"
         case .kun: "kun"
+        case .favorites: "收藏"
+        }
+    }
+
+    /// Collections whose catalog lives in a repo we update directly:
+    /// silently refresh every time the tab opens, so new wallpapers show
+    /// up without a pull-to-refresh. A failed refresh quietly keeps the
+    /// existing list.
+    var refreshesOnOpen: Bool {
+        switch self {
+        case .kun, .favorites: true
+        case .caPlayground, .nugget, .apple, .camlo: false
         }
     }
 }
@@ -26,6 +39,7 @@ enum WallpaperSource: String, Codable, Sendable {
     case camlo
     case kun
     case kunExtra
+    case favorites
 
     nonisolated var assetBaseURL: URL {
         switch self {
@@ -34,6 +48,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .camlo: WallpaperCatalog.camloAssetBaseURL
         case .kun: WallpaperCatalog.kunAssetBaseURL
         case .kunExtra: WallpaperCatalog.kunExtraAssetBaseURL
+        case .favorites: WallpaperCatalog.favoritesAssetBaseURL
         }
     }
 
@@ -44,6 +59,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .camlo: WallpaperCatalog.camloPackageBaseURL
         case .kun: WallpaperCatalog.kunPackageBaseURL
         case .kunExtra: WallpaperCatalog.kunExtraPackageBaseURL
+        case .favorites: WallpaperCatalog.favoritesPackageBaseURL
         }
     }
 
@@ -54,6 +70,7 @@ enum WallpaperSource: String, Codable, Sendable {
         case .camlo: URL(string: "https://raw.githubusercontent.com/Kianuni/Camlo/main/")!
         case .kun: URL(string: "https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
         case .kunExtra: URL(string: "https://raw.githubusercontent.com/zylovehh/win97/main/")!
+        case .favorites: URL(string: "https://raw.githubusercontent.com/kun-5201/wallpapers/main/")!
         }
     }
 }
@@ -195,6 +212,14 @@ struct WallpaperCatalog: Sendable {
     nonisolated static let kunPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/")!
     nonisolated static let kunExtraAssetBaseURL = URL(string: "https://cdn.jsdmirror.com/gh/zylovehh/win97@main/")!
     nonisolated static let kunExtraPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/zylovehh/win97/main/")!
+    /// 收藏 collection (kun-5201/wallpapers): same layout as 壁纸匣's
+    /// wallive-catalog — catalog.json at the repo root, packages under
+    /// wallpapers/, thumbnails under thumbnails/. Packages go through
+    /// gh-proxy/raw (never jsDelivr): jsDelivr answers >50 MB files with
+    /// a 200 placeholder text, which would pass the download checks and
+    /// only fail later at extract, without ever trying the fallback route.
+    nonisolated static let favoritesAssetBaseURL = URL(string: "https://fastly.jsdelivr.net/gh/kun-5201/wallpapers@main/")!
+    nonisolated static let favoritesPackageBaseURL = URL(string: "https://gh-proxy.com/https://raw.githubusercontent.com/kun-5201/wallpapers/main/")!
 
     var fetch: @Sendable (WallpaperCollection, CatalogFetchPolicy) async throws -> [Wallpaper]
 
@@ -248,6 +273,24 @@ struct WallpaperCatalog: Sendable {
             )
             let response = try JSONDecoder().decode(KunCatalogResponse.self, from: data)
             return response.items.map(\.wallpaper) + KunCatalogResponse.extras
+        case .favorites:
+            // Same timestamp cache-buster as kun: the catalog is fetched
+            // through a CDN, and a fresh query string keeps both the local
+            // cache and the CDN from serving a stale catalog after new
+            // wallpapers are pushed.
+            var components = URLComponents(
+                url: favoritesAssetBaseURL.appending(path: "catalog.json"),
+                resolvingAgainstBaseURL: false
+            )!
+            components.queryItems = [
+                URLQueryItem(name: "ts", value: String(Int(Date().timeIntervalSince1970)))
+            ]
+            let data = try await RemoteAssetCache.shared.data(
+                for: components.url!,
+                refresh: refresh
+            )
+            let response = try JSONDecoder().decode(FavoritesCatalogResponse.self, from: data)
+            return response.items.map(\.wallpaper)
         }
     }
 
@@ -382,11 +425,52 @@ private struct KunCatalogItem: Decodable {
         let prefixes = [
             "https://fastly.jsdelivr.net/gh/zylovehh/wallive-catalog@main/",
             "https://raw.githubusercontent.com/zylovehh/wallive-catalog/main/",
+            "https://fastly.jsdelivr.net/gh/kun-5201/wallpapers@main/",
+            "https://raw.githubusercontent.com/kun-5201/wallpapers/main/",
         ]
         for prefix in prefixes where absoluteURL.hasPrefix(prefix) {
             return String(absoluteURL.dropFirst(prefix.count))
         }
         return "wallpapers/" + (absoluteURL as NSString).lastPathComponent
+    }
+}
+
+/// The 收藏 collection's catalog lives in kun-5201/wallpapers, same
+/// schema as 壁纸匣's wallive-catalog (id/title/tags/thumbnail/preview/
+/// package/device/pinned/downloads). `package` is a jsDelivr URL for
+/// files ≤50 MB and a raw.githubusercontent URL for larger ones;
+/// `thumbnail` is always jsDelivr. `preview` (video) is absent: these
+/// packages have no separate preview video.
+private struct FavoritesCatalogResponse: Decodable {
+    let items: [FavoritesCatalogItem]
+}
+
+private struct FavoritesCatalogItem: Decodable {
+    let id: String?
+    let title: String?
+    let tags: [String]?
+    let thumbnail: String
+    let preview: String?
+    let package: String
+
+    nonisolated var wallpaper: Wallpaper {
+        let name: String
+        if let title, !title.isEmpty {
+            name = title
+        } else {
+            name = (package as NSString).lastPathComponent
+        }
+        return Wallpaper(
+            remoteID: nil,
+            name: name,
+            description: tags?.isEmpty == false ? tags!.joined(separator: " · ") : nil,
+            url: KunCatalogItem.relativePath(package),
+            preview: KunCatalogItem.relativePath(thumbnail),
+            previewVideo: preview.map(KunCatalogItem.relativePath),
+            authors: nil,
+            contest: nil,
+            source: .favorites
+        )
     }
 }
 
